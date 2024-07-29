@@ -1,0 +1,110 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                Int       @id @default(autoincrement())
+  email             String    @unique
+  firstName         String
+  lastName          String
+  phoneNumber       String?
+  dateJoined        DateTime  @default(now())
+  bookings          Booking[]
+  reviews           Review[]
+  role              UserRole  @default(GUEST)
+}
+
+enum UserRole {
+  ADMIN
+  GUEST
+}
+
+model Booking {
+  id            Int           @id @default(autoincrement())
+  userId        Int
+  rentalId      Int
+  checkInDate   DateTime
+  checkOutDate  DateTime
+  totalPrice    Float
+  guestQuantity Int
+  status        BookingStatus @default(PENDING)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  user          User          @relation(fields: [userId], references: [id])
+  rental        Rental        @relation(fields: [rentalId], references: [id])
+}
+
+model Rental {
+  id             Int             @id @default(autoincrement())
+  title          String
+  description    String
+  maxGuests      Int
+  bedrooms       Int
+  bathrooms      Int
+  pricePerNight  Float
+  instantBooking Boolean         @default(false)
+  locationId     Int
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  images         Image[]
+  availability   Availability[]
+  reviews        Review[]
+  amenities      RentalAmenity[]
+  bookings       Booking[]
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  rentalId  Int
+  rating    Int      @default(3) @map("rating")
+  comment   String
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id])
+  rental Rental @relation(fields: [rentalId], references: [id])
+}
+
+model Image {
+  id          Int     @id @default(autoincrement())
+  rentalId    Int
+  url         String
+  description String?
+
+  rental Rental @relation(fields: [rentalId], references: [id])
+}
+
+model Availability {
+  id        Int      @id @default(autoincrement())
+  rentalId  Int
+  startDate DateTime
+  endDate   DateTime
+
+  rental Rental @relation(fields: [rentalId], references: [id])
+}
+
+model Amenity {
+  id              Int             @id @default(autoincrement())
+  name            String
+  description     String?
+  rentalAmenities RentalAmenity[]
+}
+
+model RentalAmenity {
+  id        Int     @id @default(autoincrement())
+  rentalId  Int
+  amenityId Int
+  rental    Rental  @relation(fields: [rentalId], references: [id])
+  amenity   Amenity @relation(fields: [amenityId], references: [id])
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELED
+}
